@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verkauf erfassen - LAP Lagerverwaltung</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments :: nav}"></div>
+<div th:replace="~{fragments :: alerts}"></div>
+
+<div class="container">
+    <div class="card col-lg-8 mx-auto">
+        <div class="card-body">
+            <h1 class="h4">Verkauf erfassen</h1>
+            <form th:action="@{/sales}" method="post" th:object="${saleForm}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                <div class="mb-3">
+                    <label class="form-label">Produkt *</label>
+                    <select class="form-select" th:field="*{productId}" required>
+                        <option value="">Bitte waehlen</option>
+                        <option th:each="product : ${allProducts}" th:value="${product.id}"
+                                th:text="${product.name + ' (Bestand: ' + product.stock + ')'}">
+                        </option>
+                    </select>
+                    <div class="text-danger small" th:errors="*{productId}"></div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Stueckzahl *</label>
+                        <input class="form-control" type="number" min="1" th:field="*{quantity}" required>
+                        <div class="text-danger small" th:errors="*{quantity}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Stueckpreis</label>
+                        <input class="form-control" type="number" step="0.01" min="0.01" th:field="*{unitPrice}">
+                        <small class="text-muted">Leer = aktueller Produktpreis</small>
+                        <div class="text-danger small" th:errors="*{unitPrice}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Verkaufsdatum</label>
+                        <input class="form-control" type="date" th:field="*{saleDate}">
+                        <small class="text-muted">Leer = heute</small>
+                    </div>
+                </div>
+
+                <div class="mb-3 mt-2">
+                    <label class="form-label">Kundenname (optional)</label>
+                    <input class="form-control" type="text" maxlength="120" th:field="*{customerName}">
+                    <div class="text-danger small" th:errors="*{customerName}"></div>
+                </div>
+
+                <button class="btn btn-primary" type="submit">Verkauf speichern</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
