@@ -12,5 +12,13 @@ public interface RestockOrderRepository extends JpaRepository<RestockOrder, Long
 
     @EntityGraph(attributePaths = "product")
     List<RestockOrder> findByProductIdOrderByOrderedDateDescIdDesc(Long productId);
+
+    @EntityGraph(attributePaths = "product")
+    List<RestockOrder> findByOwnerUsernameIgnoreCaseOrderByOrderedDateDescIdDesc(String username);
+
+    @EntityGraph(attributePaths = "product")
+    List<RestockOrder> findByProductIdAndOwnerUsernameIgnoreCaseOrderByOrderedDateDescIdDesc(Long productId, String username);
+
+    long countByProductId(Long productId);
 }
 

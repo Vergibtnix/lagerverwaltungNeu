@@ -54,7 +54,13 @@
                             <input class="form-control" type="number" th:field="*{stock}" required>
                             <div class="text-danger small" th:errors="*{stock}"></div>
                         </div>
-                        <button class="btn btn-primary" type="submit">Aenderungen speichern</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" type="submit">Aenderungen speichern</button>
+                            <button class="btn btn-outline-danger" type="submit" formmethod="post"
+                                    th:formaction="@{/products/{id}/delete(id=${product.id})}">
+                                Produkt loeschen
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -64,8 +70,12 @@
             <div class="card mb-3 card-kpi">
                 <div class="card-body">
                     <p class="mb-1"><strong>Kategorie:</strong> <span th:text="${product.category.name}"></span></p>
+                    <p class="mb-1"><strong>Artikelnummer:</strong> <span th:text="${product.articleNumber}"></span></p>
                     <p class="mb-1"><strong>Aktueller Bestand:</strong>
                         <span th:text="${product.stock}" th:classappend="${product.backorderRequired} ? 'status-negative' : ''"></span>
+                    </p>
+                    <p class="mb-1"><strong>Gewichteter Durchschnittspreis:</strong>
+                        <span th:text="${#numbers.formatDecimal(product.purchasePrice, 1, 2)} + ' EUR'"></span>
                     </p>
                     <p class="mb-0" th:if="${product.backorderRequired}">
                         <span class="badge text-bg-danger">nachzuliefern</span>

@@ -1,9 +1,11 @@
 package at.vergibtnix.lager.lagerverwaltung.web.form;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -23,6 +25,10 @@ public class RestockForm {
     @NotBlank(message = "Lieferant ist erforderlich.")
     @Size(max = 120, message = "Lieferant darf maximal 120 Zeichen haben.")
     private String supplier;
+
+    @NotNull(message = "Einkaufspreis ist erforderlich.")
+    @DecimalMin(value = "0.01", message = "Einkaufspreis muss groesser als 0 sein.")
+    private BigDecimal purchasePrice;
 
     public Long getProductId() {
         return productId;
@@ -54,6 +60,14 @@ public class RestockForm {
 
     public void setSupplier(String supplier) {
         this.supplier = supplier;
+    }
+
+    public BigDecimal getPurchasePrice() {
+        return purchasePrice;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice) {
+        this.purchasePrice = purchasePrice;
     }
 }
 

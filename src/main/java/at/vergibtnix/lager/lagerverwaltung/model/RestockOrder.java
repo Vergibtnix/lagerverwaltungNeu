@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -23,6 +24,10 @@ public class RestockOrder {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private AppUser owner;
+
     @Column(nullable = false)
     private Integer quantity;
 
@@ -35,18 +40,32 @@ public class RestockOrder {
     @Column(nullable = false)
     private LocalDate orderedDate;
 
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal unitPurchasePrice;
+
     @Column
     private LocalDate receivedDate;
+
+    @Column
+    private LocalDate canceledDate;
 
     protected RestockOrder() {
     }
 
-    public RestockOrder(Product product, Integer quantity, LocalDate expectedDeliveryDate, String supplier, LocalDate orderedDate) {
+    public RestockOrder(Product product,
+                        AppUser owner,
+                        Integer quantity,
+                        LocalDate expectedDeliveryDate,
+                        String supplier,
+                        LocalDate orderedDate,
+                        BigDecimal unitPurchasePrice) {
         this.product = product;
+        this.owner = owner;
         this.quantity = quantity;
         this.expectedDeliveryDate = expectedDeliveryDate;
         this.supplier = supplier;
         this.orderedDate = orderedDate;
+        this.unitPurchasePrice = unitPurchasePrice;
     }
 
     public Long getId() {
@@ -55,6 +74,10 @@ public class RestockOrder {
 
     public Product getProduct() {
         return product;
+    }
+
+    public AppUser getOwner() {
+        return owner;
     }
 
     public Integer getQuantity() {
@@ -73,16 +96,32 @@ public class RestockOrder {
         return orderedDate;
     }
 
+    public BigDecimal getUnitPurchasePrice() {
+        return unitPurchasePrice;
+    }
+
     public LocalDate getReceivedDate() {
         return receivedDate;
+    }
+
+    public LocalDate getCanceledDate() {
+        return canceledDate;
     }
 
     public boolean isReceived() {
         return receivedDate != null;
     }
 
+    public boolean isCanceled() {
+        return canceledDate != null;
+    }
+
     public void markReceived(LocalDate receivedDate) {
         this.receivedDate = receivedDate;
+    }
+
+    public void cancel(LocalDate cancellationDate) {
+        this.canceledDate = cancellationDate;
     }
 }
 

@@ -33,6 +33,7 @@ public class ProductForm {
     @Max(value = 100000, message = "Lagerbestand zu gross.")
     private Integer stock;
 
+
     public String getName() {
         return name;
     }

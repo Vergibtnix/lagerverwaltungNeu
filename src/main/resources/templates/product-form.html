@@ -20,6 +20,7 @@
                     <form th:action="@{/products}" method="post" th:object="${productForm}" novalidate>
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
+
                         <div class="mb-3">
                             <label class="form-label">Produktname *</label>
                             <input class="form-control" type="text" th:field="*{name}" required maxlength="100">

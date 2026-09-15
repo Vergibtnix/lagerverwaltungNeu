@@ -24,6 +24,10 @@ public class SaleTransaction {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private AppUser owner;
+
     @Column(nullable = false)
     private Integer quantity;
 
@@ -33,17 +37,31 @@ public class SaleTransaction {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
 
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal costPrice;
+
     @Column(nullable = false)
     private LocalDate saleDate;
+
+    @Column
+    private LocalDate canceledDate;
 
     protected SaleTransaction() {
     }
 
-    public SaleTransaction(Product product, Integer quantity, String customerName, BigDecimal unitPrice, LocalDate saleDate) {
+    public SaleTransaction(Product product,
+                           AppUser owner,
+                           Integer quantity,
+                           String customerName,
+                           BigDecimal unitPrice,
+                           BigDecimal costPrice,
+                           LocalDate saleDate) {
         this.product = product;
+        this.owner = owner;
         this.quantity = quantity;
         this.customerName = customerName;
         this.unitPrice = unitPrice;
+        this.costPrice = costPrice;
         this.saleDate = saleDate;
     }
 
@@ -53,6 +71,10 @@ public class SaleTransaction {
 
     public Product getProduct() {
         return product;
+    }
+
+    public AppUser getOwner() {
+        return owner;
     }
 
     public Integer getQuantity() {
@@ -67,8 +89,24 @@ public class SaleTransaction {
         return unitPrice;
     }
 
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
     public LocalDate getSaleDate() {
         return saleDate;
+    }
+
+    public LocalDate getCanceledDate() {
+        return canceledDate;
+    }
+
+    public boolean isCanceled() {
+        return canceledDate != null;
+    }
+
+    public void cancel(LocalDate cancellationDate) {
+        this.canceledDate = cancellationDate;
     }
 }
 

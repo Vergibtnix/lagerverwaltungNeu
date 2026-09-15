@@ -12,7 +12,8 @@ public record TransactionRow(
         Integer quantity,
         String customerOrSupplier,
         BigDecimal unitPrice,
-        String status
+        String status,
+        String ownerUsername
 ) {
 }
 

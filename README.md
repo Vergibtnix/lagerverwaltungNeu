@@ -5,13 +5,32 @@ LAP ist eine Webanwendung zur Verwaltung von Produkten, Verkaeufen und Nachbeste
 Die Anwendung basiert auf Spring Boot (MVC) mit Thymeleaf und PostgreSQL.
 
 Funktionen:
+- Registrierung und Anmeldung fuer mehrere Benutzer
 - Produktanlage, Produktbearbeitung und Produktliste mit Filtern/Sortierung
+- Eindeutige Artikelnummer je Produkt (automatisch erzeugt)
 - Kategorieverwaltung
 - Verkaufserfassung mit automatischer Lagerbestandsanpassung
 - Nachbestellungen mit separater Wareneingangsbestaetigung
 - Transaktionshistorie (Verkauf + Nachbestellung)
+- Storno statt physischem Loeschen bei Buchungen (nachpruefbar)
 - Markierung von Produkten als `nachzuliefern` bei negativem Bestand
 - Gewinn/Verlust-Auswertung pro Produkt (auf Basis von Verkaufspreis und hinterlegtem Einkaufspreis)
+- Benutzerspezifische Einnahmen/Ausgaben (Verkauf/Nachbestellung) inkl. Saldo
+- Lagerbericht mit Artikelnummer, Artikelname, Menge und Gesamtwert
+- Top-3 Statistik nach hoechstem Lagerwert
+- Gewichteter Durchschnittspreis beim Wareneingang
+
+## Abdeckung Aufgabenblatt
+1. Artikel hinzufuegen: inklusive automatisch erzeugter eindeutiger `Artikelnummer`, Name, Beschreibung
+2. Artikel bearbeiten: ueber Produktdetails
+3. Artikel loeschen: moeglich, solange keine Buchungen referenzieren (Schutz der Historie)
+4. Bestand anzeigen: Dashboard mit Menge und Gesamtwert pro Artikel
+5. Bestand aktualisieren: ueber Verkauf/Nachbestellung mit Datum, Menge und Einkaufspreis je Buchung
+6. Bericht generieren: Seite `Lagerbericht` mit Artikelnummer, Name, Menge, Gesamtwert
+7. Statistik: Top-3 Artikel nach Lagerwert
+8. Buchungen pruefbar: Transaktionen bleiben erhalten und werden als `storniert` markiert
+9. Fortgeschritten: gewichteter Durchschnittspreis wird bei Wareneingang neu berechnet
+10. Mehrbenutzerbetrieb: Registrierung, Login und Zuordnung von Einnahmen/Ausgaben je Benutzer
 
 ## Technologien und Versionen
 - Java: 21
@@ -30,6 +49,7 @@ Funktionen:
 
 ### `products`
 - `id` (PK)
+- `article_number` (unique, max 50)
 - `name` (unique, max 100)
 - `description` (max 5000)
 - `category_id` (FK -> `product_categories.id`)
@@ -43,7 +63,9 @@ Funktionen:
 - `quantity`
 - `customer_name` (optional)
 - `unit_price`
+- `cost_price` (Einkaufspreis zum Buchungszeitpunkt)
 - `sale_date`
+- `canceled_date` (optional)
 
 ### `restock_orders`
 - `id` (PK)
@@ -52,7 +74,9 @@ Funktionen:
 - `expected_delivery_date`
 - `supplier`
 - `ordered_date`
+- `unit_purchase_price`
 - `received_date` (optional)
+- `canceled_date` (optional)
 
 Beziehungen:
 - Eine Kategorie hat viele Produkte (1:n)
@@ -88,11 +112,16 @@ Windows PowerShell:
 ```
 
 ### 3) Anwendung aufrufen
-- `http://localhost:8080`
+- `http://localhost:8088`
+
+### 4) Benutzerkonto
+- Neu registrieren unter `http://localhost:8088/register`
+- Danach anmelden unter `http://localhost:8088/login`
 
 ## Testdaten
 Beim ersten Start werden automatisch Beispieldaten erzeugt:
 - 5 Produkte aus mehreren Kategorien
+- Kategorien sind objektbezogen (z. B. Elektronik, Schreibwaren, Lebensmittel)
 - Verkaeufe mit unterschiedlichen Kunden
 - Nachbestellungen (offen und bestaetigt)
 - Szenarien mit negativem Bestand

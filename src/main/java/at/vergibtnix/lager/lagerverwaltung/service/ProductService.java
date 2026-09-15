@@ -4,11 +4,15 @@ import at.vergibtnix.lager.lagerverwaltung.model.Product;
 import at.vergibtnix.lager.lagerverwaltung.model.ProductCategory;
 import at.vergibtnix.lager.lagerverwaltung.repository.ProductCategoryRepository;
 import at.vergibtnix.lager.lagerverwaltung.repository.ProductRepository;
+import at.vergibtnix.lager.lagerverwaltung.repository.RestockOrderRepository;
+import at.vergibtnix.lager.lagerverwaltung.repository.SaleTransactionRepository;
 import at.vergibtnix.lager.lagerverwaltung.web.form.ProductFilterForm;
 import at.vergibtnix.lager.lagerverwaltung.web.form.ProductForm;
 import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +21,17 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository categoryRepository;
+    private final SaleTransactionRepository saleRepository;
+    private final RestockOrderRepository restockRepository;
 
-    public ProductService(ProductRepository productRepository, ProductCategoryRepository categoryRepository) {
+    public ProductService(ProductRepository productRepository,
+                          ProductCategoryRepository categoryRepository,
+                          SaleTransactionRepository saleRepository,
+                          RestockOrderRepository restockRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.saleRepository = saleRepository;
+        this.restockRepository = restockRepository;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +70,7 @@ public class ProductService {
 
         ProductCategory category = resolveCategory(form.getCategoryId());
         Product product = new Product(
+                generateArticleNumber(),
                 form.getName().trim(),
                 form.getDescription().trim(),
                 category,
@@ -87,6 +99,17 @@ public class ProductService {
         return product;
     }
 
+    @Transactional
+    public void deleteProduct(Long productId) {
+        Product product = getById(productId);
+        long saleCount = saleRepository.countByProductId(productId);
+        long restockCount = restockRepository.countByProductId(productId);
+        if (saleCount > 0 || restockCount > 0) {
+            throw new BusinessRuleException("Produkt kann wegen vorhandener Buchungen nicht geloescht werden.");
+        }
+        productRepository.delete(product);
+    }
+
     private ProductCategory resolveCategory(Long categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BusinessRuleException("Kategorie nicht gefunden."));
@@ -94,6 +117,16 @@ public class ProductService {
 
     private BigDecimal defaultCost(BigDecimal purchasePrice) {
         return purchasePrice == null ? BigDecimal.ZERO : purchasePrice;
+    }
+
+    private String generateArticleNumber() {
+        for (int i = 0; i < 10; i++) {
+            String candidate = "ART-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+            if (productRepository.findByArticleNumberIgnoreCase(candidate).isEmpty()) {
+                return candidate;
+            }
+        }
+        throw new BusinessRuleException("Artikelnummer konnte nicht erzeugt werden. Bitte erneut versuchen.");
     }
 
     private Comparator<Product> buildComparator(String sortBy) {

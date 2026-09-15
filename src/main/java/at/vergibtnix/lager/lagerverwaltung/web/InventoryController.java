@@ -14,6 +14,7 @@ import at.vergibtnix.lager.lagerverwaltung.web.form.RestockForm;
 import at.vergibtnix.lager.lagerverwaltung.web.form.SaleForm;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -46,8 +47,11 @@ public class InventoryController {
 
     @GetMapping("/")
     public String dashboard(@ModelAttribute("filter") ProductFilterForm filter, Model model) {
+        List<Product> filteredProducts = productService.findAllFiltered(filter);
         populateCommon(model);
-        model.addAttribute("products", productService.findAllFiltered(filter));
+        model.addAttribute("products", filteredProducts);
+        model.addAttribute("inventoryRows", reportingService.getInventoryReportRows(filteredProducts));
+        model.addAttribute("topInventoryRows", reportingService.getTopProductsByInventoryValue(3));
         return "dashboard";
     }
 
@@ -146,6 +150,18 @@ public class InventoryController {
         return "redirect:/products/" + productId;
     }
 
+    @PostMapping("/products/{productId}/delete")
+    public String deleteProduct(@PathVariable Long productId, RedirectAttributes redirectAttributes) {
+        try {
+            productService.deleteProduct(productId);
+            redirectAttributes.addFlashAttribute("successMessage", "Produkt wurde geloescht.");
+            return "redirect:/";
+        } catch (BusinessRuleException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/products/" + productId;
+        }
+    }
+
     @GetMapping("/sales/new")
     public String newSale(Model model) {
         populateCommon(model);
@@ -179,7 +195,7 @@ public class InventoryController {
     public String deleteSale(@PathVariable Long saleId, RedirectAttributes redirectAttributes) {
         try {
             saleService.deleteSale(saleId);
-            redirectAttributes.addFlashAttribute("successMessage", "Verkauf wurde geloescht und Bestand korrigiert.");
+            redirectAttributes.addFlashAttribute("successMessage", "Verkauf wurde storniert und Bestand korrigiert.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -232,7 +248,7 @@ public class InventoryController {
     public String deleteRestock(@PathVariable Long restockId, RedirectAttributes redirectAttributes) {
         try {
             restockService.deleteRestock(restockId);
-            redirectAttributes.addFlashAttribute("successMessage", "Nachbestellung wurde geloescht.");
+            redirectAttributes.addFlashAttribute("successMessage", "Nachbestellung wurde storniert.");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
@@ -244,7 +260,15 @@ public class InventoryController {
         populateCommon(model);
         model.addAttribute("transactions", reportingService.getTransactionHistory());
         model.addAttribute("profitRows", reportingService.getProfitByProduct());
+        model.addAttribute("financeSummary", reportingService.getFinanceSummaryForCurrentUser());
         return "transactions";
+    }
+
+    @GetMapping("/reports/inventory")
+    public String inventoryReport(Model model) {
+        populateCommon(model);
+        model.addAttribute("reportRows", reportingService.getInventoryReportRows());
+        return "inventory-report";
     }
 
     private void populateCommon(Model model) {

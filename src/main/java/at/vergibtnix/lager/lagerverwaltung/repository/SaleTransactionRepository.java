@@ -12,5 +12,13 @@ public interface SaleTransactionRepository extends JpaRepository<SaleTransaction
 
     @EntityGraph(attributePaths = "product")
     List<SaleTransaction> findByProductIdOrderBySaleDateDescIdDesc(Long productId);
+
+    @EntityGraph(attributePaths = "product")
+    List<SaleTransaction> findByOwnerUsernameIgnoreCaseOrderBySaleDateDescIdDesc(String username);
+
+    @EntityGraph(attributePaths = "product")
+    List<SaleTransaction> findByProductIdAndOwnerUsernameIgnoreCaseOrderBySaleDateDescIdDesc(Long productId, String username);
+
+    long countByProductId(Long productId);
 }
 

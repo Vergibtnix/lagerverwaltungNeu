@@ -23,6 +23,10 @@ public class SaleForm {
     @DecimalMin(value = "0.01", message = "Stueckpreis muss groesser als 0 sein.")
     private BigDecimal unitPrice;
 
+    @NotNull(message = "Einkaufspreis ist erforderlich.")
+    @DecimalMin(value = "0.01", message = "Einkaufspreis muss groesser als 0 sein.")
+    private BigDecimal costPrice;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate saleDate;
 
@@ -56,6 +60,14 @@ public class SaleForm {
 
     public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
+    }
+
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
     }
 
     public LocalDate getSaleDate() {

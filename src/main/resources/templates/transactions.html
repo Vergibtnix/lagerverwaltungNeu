@@ -14,16 +14,46 @@
 <div class="container">
     <h1 class="h3 mb-3">Verkaufs- und Nachbestellungsuebersicht</h1>
 
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="small text-muted">Meine Einnahmen</div>
+                    <div class="h5 mb-0" th:text="|${#numbers.formatDecimal(financeSummary.income, 1, 2)} EUR|"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="small text-muted">Meine Ausgaben</div>
+                    <div class="h5 mb-0" th:text="|${#numbers.formatDecimal(financeSummary.expense, 1, 2)} EUR|"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-kpi">
+                <div class="card-body">
+                    <div class="small text-muted">Mein Saldo</div>
+                    <div class="h5 mb-0" th:text="|${#numbers.formatDecimal(financeSummary.balance, 1, 2)} EUR|"
+                         th:classappend="${financeSummary.balance.signum() < 0} ? 'status-negative' : ''"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="table-responsive mb-4">
         <table class="table table-striped bg-white">
             <thead>
             <tr>
                 <th>Typ</th>
                 <th>Datum</th>
+                <th>Artikelnummer</th>
                 <th>Produkt</th>
                 <th>Menge</th>
                 <th>Kunde/Lieferant</th>
-                <th>Preis</th>
+                <th>Einkaufspreis</th>
+                <th>Benutzer</th>
                 <th>Status</th>
                 <th>Aktion</th>
             </tr>
@@ -35,22 +65,25 @@
                     <span th:if="${tx.type == 'NACHBESTELLUNG'}" class="badge text-bg-secondary">Nachbestellung</span>
                 </td>
                 <td th:text="${tx.date}"></td>
+                <td th:text="${tx.product.articleNumber}"></td>
                 <td>
                     <a th:href="@{/products/{id}(id=${tx.product.id})}" th:text="${tx.product.name}"></a>
                 </td>
                 <td th:text="${tx.quantity}"></td>
                 <td th:text="${tx.customerOrSupplier ?: '-'}"></td>
                 <td th:text="${tx.unitPrice != null ? #numbers.formatDecimal(tx.unitPrice, 1, 2) + ' EUR' : '-'}"></td>
+                <td th:text="${tx.ownerUsername}"></td>
                 <td>
                     <span th:if="${tx.status == 'nachzuliefern'}" class="badge text-bg-danger">nachzuliefern</span>
                     <span th:if="${tx.status == 'ok'}" class="badge text-bg-success">ok</span>
                     <span th:if="${tx.status == 'offen'}" class="badge text-bg-warning">offen</span>
                     <span th:if="${tx.status == 'eingegangen'}" class="badge text-bg-success">eingegangen</span>
+                    <span th:if="${tx.status == 'storniert'}" class="badge text-bg-dark">storniert</span>
                 </td>
                 <td>
-                    <form th:if="${tx.type == 'VERKAUF'}" th:action="@{/sales/{id}/delete(id=${tx.transactionId})}" method="post" class="d-inline">
+                    <form th:if="${tx.type == 'VERKAUF' and tx.status != 'storniert'}" th:action="@{/sales/{id}/delete(id=${tx.transactionId})}" method="post" class="d-inline">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <button class="btn btn-sm btn-outline-danger" type="submit">Loeschen</button>
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Stornieren</button>
                     </form>
                     <form th:if="${tx.type == 'NACHBESTELLUNG' and tx.status == 'offen'}" th:action="@{/restocks/{id}/receive(id=${tx.transactionId})}" method="post" class="d-inline">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -58,12 +91,12 @@
                     </form>
                     <form th:if="${tx.type == 'NACHBESTELLUNG' and tx.status == 'offen'}" th:action="@{/restocks/{id}/delete(id=${tx.transactionId})}" method="post" class="d-inline">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                        <button class="btn btn-sm btn-outline-danger" type="submit">Loeschen</button>
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Stornieren</button>
                     </form>
                 </td>
             </tr>
             <tr th:if="${#lists.isEmpty(transactions)}">
-                <td colspan="8" class="text-center">Keine Transaktionen vorhanden.</td>
+                <td colspan="10" class="text-center">Keine Transaktionen vorhanden.</td>
             </tr>
             </tbody>
         </table>

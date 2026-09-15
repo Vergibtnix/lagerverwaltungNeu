@@ -37,8 +37,9 @@ public class ReportingService {
                     sale.getSaleDate(),
                     sale.getQuantity(),
                     sale.getCustomerName(),
-                    sale.getUnitPrice(),
-                    sale.getProduct().isBackorderRequired() ? "nachzuliefern" : "ok"
+                    sale.getCostPrice(),
+                    sale.isCanceled() ? "storniert" : (sale.getProduct().isBackorderRequired() ? "nachzuliefern" : "ok"),
+                    sale.getOwner() == null ? "-" : sale.getOwner().getUsername()
             ));
         }
 
@@ -50,8 +51,9 @@ public class ReportingService {
                     restock.getOrderedDate(),
                     restock.getQuantity(),
                     restock.getSupplier(),
-                    null,
-                    restock.isReceived() ? "eingegangen" : "offen"
+                    restock.getUnitPurchasePrice(),
+                    restock.isCanceled() ? "storniert" : (restock.isReceived() ? "eingegangen" : "offen"),
+                    restock.getOwner() == null ? "-" : restock.getOwner().getUsername()
             ));
         }
 
@@ -65,6 +67,7 @@ public class ReportingService {
     public List<ProductProfitRow> getProfitByProduct() {
         List<Product> products = productService.findAll();
         Map<Long, List<SaleTransaction>> salesByProduct = saleService.findAll().stream()
+                .filter(sale -> !sale.isCanceled())
                 .collect(Collectors.groupingBy(sale -> sale.getProduct().getId()));
 
         return products.stream()
@@ -78,10 +81,53 @@ public class ReportingService {
         BigDecimal revenue = sales.stream()
                 .map(sale -> sale.getUnitPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal estimatedCost = product.getPurchasePrice().multiply(BigDecimal.valueOf(soldQuantity));
+        BigDecimal estimatedCost = sales.stream()
+                .map(sale -> sale.getCostPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal profit = revenue.subtract(estimatedCost);
 
         return new ProductProfitRow(product, soldQuantity, revenue, estimatedCost, profit);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryReportRow> getInventoryReportRows() {
+        return getInventoryReportRows(productService.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryReportRow> getInventoryReportRows(List<Product> products) {
+        return products.stream()
+                .map(this::toInventoryRow)
+                .sorted(Comparator.comparing(row -> row.product().getName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryReportRow> getTopProductsByInventoryValue(int limit) {
+        return getInventoryReportRows().stream()
+                .sorted(Comparator.comparing(InventoryReportRow::totalValue).reversed())
+                .limit(limit)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserFinanceSummary getFinanceSummaryForCurrentUser() {
+        BigDecimal income = saleService.findAll().stream()
+                .filter(sale -> !sale.isCanceled())
+                .map(sale -> sale.getUnitPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal expense = restockService.findAll().stream()
+                .filter(restock -> restock.isReceived() && !restock.isCanceled())
+                .map(restock -> restock.getUnitPurchasePrice().multiply(BigDecimal.valueOf(restock.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new UserFinanceSummary(income, expense, income.subtract(expense));
+    }
+
+    private InventoryReportRow toInventoryRow(Product product) {
+        BigDecimal totalValue = product.getPurchasePrice().multiply(BigDecimal.valueOf(product.getStock()));
+        return new InventoryReportRow(product, product.getStock(), product.getPurchasePrice(), totalValue);
     }
 }
 
