@@ -16,6 +16,7 @@ public class CurrentUserService {
     }
 
     public AppUser getRequiredCurrentUser() {
+        // Der Benutzername kommt aus dem SecurityContext und wird gegen die Datenbank aufgeloest.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
             throw new BusinessRuleException("Benutzer ist nicht angemeldet.");

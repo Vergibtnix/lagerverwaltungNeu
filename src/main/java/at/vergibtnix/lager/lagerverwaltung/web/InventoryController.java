@@ -97,6 +97,7 @@ public class InventoryController {
                                 BindingResult bindingResult,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
+        // Bei Validierungsfehlern dieselbe View rendern, damit Feldfehler direkt sichtbar bleiben.
         if (bindingResult.hasErrors()) {
             populateCommon(model);
             model.addAttribute("categoryForm", new CategoryForm());
@@ -147,6 +148,7 @@ public class InventoryController {
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
+        // PRG-Muster verhindert Doppelsubmits beim Browser-Reload.
         return "redirect:/products/" + productId;
     }
 
@@ -258,6 +260,7 @@ public class InventoryController {
     @GetMapping("/transactions")
     public String transactions(Model model) {
         populateCommon(model);
+        // Diese Seite buendelt Historie, Profit je Produkt und Benutzersaldo in einem Request.
         model.addAttribute("transactions", reportingService.getTransactionHistory());
         model.addAttribute("profitRows", reportingService.getProfitByProduct());
         model.addAttribute("financeSummary", reportingService.getFinanceSummaryForCurrentUser());

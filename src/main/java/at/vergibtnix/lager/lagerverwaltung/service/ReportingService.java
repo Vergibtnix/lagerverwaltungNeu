@@ -29,6 +29,7 @@ public class ReportingService {
     public List<TransactionRow> getTransactionHistory() {
         List<TransactionRow> rows = new ArrayList<>();
 
+        // Vereinheitlichte Sicht: Verkaeufe und Nachbestellungen werden in eine gemeinsame Timeline gemappt.
         for (SaleTransaction sale : saleService.findAll()) {
             rows.add(new TransactionRow(
                     "VERKAUF",
@@ -78,9 +79,11 @@ public class ReportingService {
 
     private ProductProfitRow buildProfitRow(Product product, List<SaleTransaction> sales) {
         int soldQuantity = sales.stream().mapToInt(SaleTransaction::getQuantity).sum();
+        // Umsatz basiert auf Verkaufspreis pro Buchung, nicht auf aktuellem Produktpreis.
         BigDecimal revenue = sales.stream()
                 .map(sale -> sale.getUnitPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Kosten werden mit dem in der Buchung gespeicherten Einkaufspreis zum Verkaufszeitpunkt bewertet.
         BigDecimal estimatedCost = sales.stream()
                 .map(sale -> sale.getCostPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -112,11 +115,13 @@ public class ReportingService {
 
     @Transactional(readOnly = true)
     public UserFinanceSummary getFinanceSummaryForCurrentUser() {
+        // Einnahmen zaehlen nur aus aktiven Verkaeufen des aktuellen Benutzers.
         BigDecimal income = saleService.findAll().stream()
                 .filter(sale -> !sale.isCanceled())
                 .map(sale -> sale.getUnitPrice().multiply(BigDecimal.valueOf(sale.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Ausgaben zaehlen erst mit bestaetigtem Wareneingang (offene Bestellungen sind noch keine realen Kosten).
         BigDecimal expense = restockService.findAll().stream()
                 .filter(restock -> restock.isReceived() && !restock.isCanceled())
                 .map(restock -> restock.getUnitPurchasePrice().multiply(BigDecimal.valueOf(restock.getQuantity())))
@@ -126,6 +131,7 @@ public class ReportingService {
     }
 
     private InventoryReportRow toInventoryRow(Product product) {
+        // Gesamtwert pro Artikel = aktueller Einkaufspreis * aktuelle Menge.
         BigDecimal totalValue = product.getPurchasePrice().multiply(BigDecimal.valueOf(product.getStock()));
         return new InventoryReportRow(product, product.getStock(), product.getPurchasePrice(), totalValue);
     }

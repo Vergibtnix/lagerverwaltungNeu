@@ -27,6 +27,7 @@ public class SaleService {
     public SaleTransaction recordSale(SaleForm form) {
         Product product = productService.getById(form.getProductId());
         var currentUser = currentUserService.getRequiredCurrentUser();
+        // Ohne expliziten Formularpreis wird mit dem aktuell hinterlegten Verkaufspreis gebucht.
         BigDecimal unitPrice = form.getUnitPrice() == null ? product.getSalePrice() : form.getUnitPrice();
         BigDecimal costPrice = form.getCostPrice();
         LocalDate saleDate = form.getSaleDate() == null ? LocalDate.now() : form.getSaleDate();
@@ -35,6 +36,7 @@ public class SaleService {
                 : form.getCustomerName().trim();
 
         SaleTransaction sale = new SaleTransaction(product, currentUser, form.getQuantity(), customerName, unitPrice, costPrice, saleDate);
+        // Verkauf reduziert sofort den Lagerbestand; negativer Bestand markiert spaeter Nachlieferbedarf.
         product.setStock(product.getStock() - form.getQuantity());
         return saleRepository.save(sale);
     }
@@ -51,6 +53,7 @@ public class SaleService {
             throw new BusinessRuleException("Verkauf wurde bereits storniert.");
         }
         Product product = sale.getProduct();
+        // Storno ist eine fachliche Rueckbuchung: Bestand wird korrigiert, Datensatz bleibt zur Historie erhalten.
         product.setStock(product.getStock() + sale.getQuantity());
         sale.cancel(LocalDate.now());
     }

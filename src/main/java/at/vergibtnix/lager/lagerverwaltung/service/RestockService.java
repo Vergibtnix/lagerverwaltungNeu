@@ -57,6 +57,7 @@ public class RestockService {
             throw new BusinessRuleException("Wareneingang wurde bereits bestaetigt.");
         }
         Product product = order.getProduct();
+        // Beim Wareneingang wird der Einkaufspreis als gewichteter Durchschnitt fortgeschrieben.
         product.setPurchasePrice(calculateWeightedAveragePurchasePrice(product, order));
         product.setStock(product.getStock() + order.getQuantity());
         order.markReceived(receivedDate == null ? LocalDate.now() : receivedDate);
@@ -93,6 +94,7 @@ public class RestockService {
     }
 
     private BigDecimal calculateWeightedAveragePurchasePrice(Product product, RestockOrder order) {
+        // Negativer Bestand wird fuer die Durchschnittskalkulation wie 0 behandelt, um Kosten nicht zu verfaelschen.
         int currentStock = Math.max(product.getStock(), 0);
         int incomingStock = order.getQuantity();
         BigDecimal currentCost = product.getPurchasePrice();
@@ -105,6 +107,7 @@ public class RestockService {
         BigDecimal currentTotal = currentCost.multiply(BigDecimal.valueOf(currentStock));
         BigDecimal incomingTotal = incomingCost.multiply(BigDecimal.valueOf(incomingStock));
         BigDecimal totalQuantity = BigDecimal.valueOf((long) currentStock + incomingStock);
+        // Durchschnitt = (Bestandswert alt + Zugangswert neu) / Gesamtmenge.
         return currentTotal.add(incomingTotal).divide(totalQuantity, 2, RoundingMode.HALF_UP);
     }
 }

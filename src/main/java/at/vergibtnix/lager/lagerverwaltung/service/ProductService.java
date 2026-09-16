@@ -41,6 +41,7 @@ public class ProductService {
             comparator = comparator.reversed();
         }
 
+        // Alle Filter werden in-memory kombiniert, damit mehrere Kriterien gleichzeitig greifen.
         return productRepository.findAll().stream()
                 .filter(product -> matchesName(product, filter.getName()))
                 .filter(product -> matchesCategory(product, filter.getCategoryId()))
@@ -104,6 +105,7 @@ public class ProductService {
         Product product = getById(productId);
         long saleCount = saleRepository.countByProductId(productId);
         long restockCount = restockRepository.countByProductId(productId);
+        // Produkte mit Historie bleiben erhalten, damit Buchungen im Nachhinein pruefbar bleiben.
         if (saleCount > 0 || restockCount > 0) {
             throw new BusinessRuleException("Produkt kann wegen vorhandener Buchungen nicht geloescht werden.");
         }
@@ -120,6 +122,7 @@ public class ProductService {
     }
 
     private String generateArticleNumber() {
+        // Mehrere Versuche minimieren das Risiko eines seltenen UUID-Substring-Kollisionsfalls.
         for (int i = 0; i < 10; i++) {
             String candidate = "ART-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
             if (productRepository.findByArticleNumberIgnoreCase(candidate).isEmpty()) {
